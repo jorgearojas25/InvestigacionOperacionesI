@@ -1,0 +1,21 @@
+g=[1.6 1.4];
+f=-1*g;
+A=[10 20;
+   15 10;
+   18 6];
+b=[8000;
+   6000;
+   6300];
+[x,z]=linprog(f,A,b);
+
+fprintf('un artesano fabrica trenes y camiones de juguetes utilizando tornillos,\n bloques y ruedas como componentes, en la semana próxima dispone de 8000\n 6000 y 6300 componentes respectivamente, los beneficios por tren\n y camión son 1.6 euros/unidad  y   1.4 euros/unidad');
+fprintf('\n El vector a maximizar es:\n');
+disp(g);
+fprintf('\n La matriz de restricciones es: \n');
+disp(A);
+fprintf('\n La matriz de resultados es: \n');
+disp(b);
+fprintf('\n Los valores optimos son los siguientes\n');
+disp(x);
+fprintf('\n Para conseguir: ');
+disp(-z);

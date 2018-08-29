@@ -1,0 +1,26 @@
+g=[180 160];
+f=-1*g;
+A=[6 1;
+   3 1;
+   4 6];
+b=[12;   
+   8;
+   24];
+[x,z]=linprog(f,A,b);
+
+fprintf('Dos empresas mineras extraen dos tipos diferentes de minerales,\n los cuales son sometidos a un proceso de trituración, con tres\n grados: alto, medio y bajo.\n Las compañias han firmado un contrato para proveer de mineral a una\n planta de fundicion, cada semana, 12 toneladas de mineral de\n grado alto, 8 toneladas de grado medio y 24 toneladas de grado bajo,\n cada uno de las empresas tiene diferentes procesos de fabricacion:\n \n');
+fprintf('|MINA | COSTO/DIA | PRODUCION TONELADAS/DIA |\n');
+fprintf('|MINA | COSTO/DIA |  ALTO |  MEDIO  |  BAJO |\n');
+fprintf('|  X  |    180    |    6  |    3    |    4  |\n');
+fprintf('|  Y  |    160    |    1  |    1    |    6  |\n');
+fprintf('\n ¿Cuántos días a la semana deberia operar cada empresa para\n cumplir el contrato con la planta de fundición?\n');
+fprintf('\n El vector a minimizar es:\n');
+disp(g);
+fprintf('\n La matriz de restricciones es: \n');
+disp(A);
+fprintf('\n La matriz de resultados es: \n');
+disp(b);
+fprintf('\n Los valores optimos son los siguientes\n');
+disp(x);
+fprintf('\n Para conseguir: ');
+disp(-z);
