@@ -1,53 +1,57 @@
-classdef bigM < handle
-    % BIGM This class implements big M Simplex Method to solve a
+classdef granM < handle
+    % granM This class implements big M Simplex Method to solve a
     % linear programming problem in the following format
     % min/max c'x
     % s.t.   Ax {>=, =, <=} b
     % x >= 0
     %
-    % The code here follows the variation taught in the FuO Course for 
-    % OR Msc. Specifically, this class is designed for class demonstration 
-    % and small problems only, neither suitable for large problem nor 
-    % powerful enough for high performance computing.
+    % Este codigo es una verifiacion de ejercicios hechos a mano entrgados
+    % el dia 17 de septiembre del 2018 para la clase de IO, no esta
+    % diseñado para resolver probelmas grandes, no es lo suficiente para
+    % resolver problemas de informatica de alto rendimiento.
     %
-    % Example: See example.m
+    % Ejcutar example.m
     %
-    % 3rd Oct 2013
+    % 17 Sep 2018
+    
+    % Jorge Rojas
+    % Universidad Distrital Frnacisco Jose de Caldas
+    % Basado en el repositorio de:
     % Yiming YAN 
     % University of Edinburgh
     
     properties(SetAccess = private)
-        A;                      % Matrix in Ax {<=, =, >=} b
-        b;                      % RHS
-        c;                      % Vector of coefficients of objective function 
-        inq;                    % m dimentional vector, 
-                                % 1 for >=; 0 for ==; -1 for <=.
-        m;                      % Number of constraints
-        n;                      % Number of original primal variables
-        x_opt;                  % Optimal solution
-        fval;                   % Optimal objective value
-        type;                   % Minimise or maximise the problem
+        A;                      % Matriz en Ax {<=, =, >=} b
+        b;                      % Valores de las restricciones
+        c;                      % Vector de coeficientes de la funcion objetivo 
+        inq;                    % vector de asignacion, 
+                                % 1 para >=; 0 para ==; -1 para <=.
+        m;                      % Numero de restricciones
+        n;                      % Numero de variables originales
+        x_opt;                  % Solucion optima
+        fval;                   % Valor optimo de la f objetivo
+        type;                   % Minimizar o maximizar 
     end
     
     properties( Access = private )
-        M;                      % bigM
+        M;                     
         
-        n_slack;                % Number of slack vars added
-        n_artfVar;              % number of artificial vars added
-        artfcl_var_set          % The index set of artificial variables
-        artfcl_var_removed = 1; % 1, if removed
+        n_hold;                 % Numero de variables de Holgura añadidas
+        n_artfVar;              % Numero de variables artificiales añadidas
+        artfcl_var_set          % Indicador de las variables artificiales
+        artfcl_var_removed = 1; % 1, if removida
         
-        counter = 1;            % Iteration counter
+        counter = 1;            % Contador de Iteraciones
         
-        basis;                  % Vector of indices of basic basic variables
+        basis;                  % Vector de indices de variables basicas
         reducedCost;             
         whichRow;                
         
-        tab;                    % Tableau
-        status;                 % maxIter, unbounded, infeasible, optimal
+        tab;                    % Tabla
+        status;                 % MáxIter, ilimitado, infactible, óptimo
         terminate;
-        vars_list;              % List of names of all variables
-        unbounded_vars;         % unbounded variables
+        vars_list;              % Lista de nombres de las variables
+        nolimitado_vars;         % Variables ilimitadas
     end
     
     properties( Constant )
@@ -56,37 +60,37 @@ classdef bigM < handle
     
     methods
         
-        function p = bigM(A,b,c,inq, type)
+        function p = granM(A,b,c,inq, type)
             % CONSTRUCTOR
             
-            % Check input
+            % Validar entradas
             if nargin < 4
-                error('bigM: Not enough input');
+                error('granM: No hay suficientes entradas');
             end
             
-            %% Read the input
-            % Check min or max
+            %% Leer la entrada
+            % Ver si es max o min
             if strcmpi(type,'max')
                 c = -c;
             end
             
-            % Check if b is negative
+            % Validar que b no sea negativa
             b_Neg = b < 0;
             inq(b_Neg) = -inq(b_Neg);
             b(b_Neg) = -b(b_Neg);
             A(b_Neg,:) = -A(b_Neg,:);
             
-            % Assiqn properties
+            % Asignacion de propiedades
             p.A = A; p.b = b; p.c = c;
             p.inq = inq;
             p.terminate = 0;
             
-            % Set the value of big M!
+            % Asignar el valor de M
             p.M = ceil(max(norm(A),norm(b))/100)*100;
             
             [p.m, p.n] = size(A);
             
-            % Form the vars_list
+            % Crear la lista de variables
             p.vars_list = cell(1,p.n);
             for i=1:p.n
                 p.vars_list{i} = ['x' num2str(i)];
@@ -95,10 +99,9 @@ classdef bigM < handle
             p.type = type;
         end
         
-        %% Driver function
+        %% Funcion principal
         function solve(p)
-            % SOLVE This is the driver function for bigM which actually
-            % solves the given problem.
+            % Esta es la funcion que resuelve el problema.
             
             p.transform_to_standardForm;
             p.construct_initial_tableau;
@@ -115,10 +118,10 @@ classdef bigM < handle
         
         function transform_to_standardForm(p)
             
-            % add slack variables
-            p.n_slack = sum(p.inq < 0)+sum(p.inq > 0);
-            p.A = [p.A zeros(p.m, p.n_slack)];
-            p.c = [p.c; zeros(p.n_slack,1)];
+            % Añade las variables de holguta
+            p.n_hold = sum(p.inq < 0)+sum(p.inq > 0);
+            p.A = [p.A zeros(p.m, p.n_hold)];
+            p.c = [p.c; zeros(p.n_hold,1)];
             
             idx_slack = p.n+1;
             for i = 1:p.m
@@ -137,13 +140,13 @@ classdef bigM < handle
         
         function construct_initial_tableau(p)
 
-            % Find potential basis
-            for i = 1:p.n+p.n_slack
+            % Encuentra la base potencial
+            for i = 1:p.n+p.n_hold
                 
                 if nnz(p.A(:,i)) == 1
                     row_number = find(p.A(:,i) == 1);
                     if ~isempty(row_number)                        
-                        % Add the col if the current row has not been selected
+                        % Revisa que la fila actual sea evaluada
                         if ~ismember(row_number, p.whichRow)
                             p.whichRow(end+1) = row_number;
                             p.basis(row_number) = i;
@@ -152,36 +155,37 @@ classdef bigM < handle
                 end
             end
             
-            % Add bigM if necessary            
+            % Añade las M's necesarias            
             p.n_artfVar = p.m - sum(p.basis > 0);
             if  p.n_artfVar > 0
                 p.artfcl_var_removed = 0;
                 
-                % Record the index for artificial variables
-                p.artfcl_var_set = (p.n + p.n_slack + 1) : (p.n + p.n_slack + p.n_artfVar);
+                % Registra el indice de variables artificiales
+                p.artfcl_var_set = (p.n + p.n_hold + 1) : (p.n + p.n_hold + p.n_artfVar);
                 
                 p.A = [p.A zeros(p.m,p.n_artfVar)];
                 
                 add_to_rows = setdiff(1:p.m, p.whichRow);
                 
-                % Formulate matrix A with newly added artificial vars
+                % Formula la matriz A con las variables artificiales
+                % agregadas
                 for i = 1:length(add_to_rows)
-                   p.A(add_to_rows(i), p.n+p.n_slack+i) = 1;
+                   p.A(add_to_rows(i), p.n+p.n_hold+i) = 1;
                    p.vars_list{end+1} = ['a' num2str(i)];
-                   p.basis(add_to_rows(i)) = p.n+p.n_slack+i;
+                   p.basis(add_to_rows(i)) = p.n+p.n_hold+i;
                 end
                 
                 p.c = [p.c; p.M*ones(p.n_artfVar,1)];
                 
             end
                         
-            % Get reducedCost
-            p.reducedCost = zeros(1,p.n + p.n_slack + p.n_artfVar);
+            % Recibe las bases
+            p.reducedCost = zeros(1,p.n + p.n_hold + p.n_artfVar);
             y = p.c(p.basis);
             
             p.reducedCost = (p.c - p.A'*y)';
             
-            % Construct initial tableau
+            % Construye la tabla inicial
             p.tab = [p.A  p.b];
             p.tab = [p.tab; [ p.reducedCost -p.b'*y ]];
         end
@@ -189,24 +193,24 @@ classdef bigM < handle
         function do_simplex_iterate(p)
             % DO_SIMPLEX_ITERATE Perform one iterate of simplex method.
             
-            % Find the smallest reduced cost
+            % Encuentra el valor mas pequeño
             [~, workCol] = min( p.tab(end,1:end-1) );
             
-            % Choose the smallest postive ratio
+            % elige el residuo mas pequeño
             work_col_positive_elems = find( p.tab(1:end-1,workCol) > 0 );
             
             [~, chooseRow] = min( p.tab(work_col_positive_elems, end) ./...
                 p.tab(work_col_positive_elems, workCol) );
             chooseRow = work_col_positive_elems(chooseRow);
             
-            % In/out basis
+            % Entrada y salida de las bases
             p.basis(chooseRow) = workCol;
             
-            % Get pivot
+            % Recibe el pivot
             pivot = p.tab(chooseRow, workCol);
             
-            % Elemenate elements in work cols
-            % and update the value of elements in the tableau.
+            % Elimina elementos trabajados
+            % y añade el elemento actual a ala tabla.
             p.tab(chooseRow, :) = p.tab(chooseRow,:) / pivot;
             
             tmp_row_indx = setdiff(1:p.m+1,chooseRow);
@@ -217,7 +221,7 @@ classdef bigM < handle
         end
         
         function remove_artfcl_vars(p)
-            % Check if artificial variables can be removed
+            % Mira que las variables artificiales sean removidas
             if ~p.artfcl_var_removed
                 if all( p.tab(end, p.artfcl_var_set) > 0 )
                     p.tab(:,p.artfcl_var_set) = [];
@@ -231,23 +235,23 @@ classdef bigM < handle
         function check_termination(p)
             p.terminate = 0;
             
-            % Reach maxIter
+            % Evita que supere el maximo de iteraciones
             if p.counter >= p.maxIter
                 p.terminate = 1;
                 p.status = 'maxIter';
             end
             
-            % Nonnegative reduced costs - optimal
+            % Revisa los productos de M que no sean negativos
             if all(p.tab(end,1:end-1) > -1e-10)
                 p.terminate = 1;
                 
-                % infeasible
+                % No factible
                 if ~p.artfcl_var_removed
-                    p.status = 'infeasible';
+                    p.status = 'infactible';
                 else
-                    % optimal
-                    p.status = 'optimal';
-                    p.x_opt = zeros(p.n + p.n_slack + p.n_artfVar, 1);
+                    % Optimo
+                    p.status = 'optimo';
+                    p.x_opt = zeros(p.n + p.n_hold + p.n_artfVar, 1);
                     p.x_opt(p.basis) = p.tab(1:end-1,end);
                     if strcmpi(p.type,'max')
                         p.fval = p.tab(end,end);
@@ -256,14 +260,14 @@ classdef bigM < handle
                     end
                 end
             else
-                % unbounded
+                % Ilimitado
                 negative_rc_cols = find(p.tab (end,1:end-1) < 0);
-                unbounded_idx = sum(p.tab(1:end-1, negative_rc_cols) < 0);
-                unbounded_idx = unbounded_idx == p.m;
-                if any(unbounded_idx)
-                    p.status = 'unbounded';
+                nolimitado_idx = sum(p.tab(1:end-1, negative_rc_cols) < 0);
+                nolimitado_idx = nolimitado_idx == p.m;
+                if any(nolimitado_idx)
+                    p.status = 'nolimitado';
                     p.terminate = 1;
-                    p.unbounded_vars = negative_rc_cols(unbounded_idx > 0);
+                    p.nolimitado_vars = negative_rc_cols(nolimitado_idx > 0);
                 end                
             end
         end
@@ -275,7 +279,7 @@ classdef bigM < handle
         
         function printTab(p)
             fprintf('\n\n');
-            fprintf('\t\tTableau %2s:\n\n', num2str(p.counter));
+            fprintf('\t\tTabla %2s:\n\n', num2str(p.counter));
             % Print header
             for k=1:length(p.vars_list)+1
                 if k==1
@@ -311,28 +315,28 @@ classdef bigM < handle
         function output_summary(p)
             if p.terminate
                 fprintf('\n========== ========== ==========\n');
-                fprintf('Terminated. \n');
+                fprintf('Terminado. \n');
                 switch lower( p.status )
-                    case 'optimal'
-                        fprintf('Optimal solution: \n');
+                    case 'optimo'
+                        fprintf('Soluciones optimas: \n');
                         for i=1:p.n
                             fprintf('x[%2d ] = %5.2f\n', i, p.x_opt(i));
                         end
-                        fprintf('Optimal objective function value: %5.2f\n', p.fval);
+                        fprintf('Valor Optimo de la funcion objetivo: %5.2f\n', p.fval);
                         
-                    case 'unbounded'
-                        fprintf('This problem is unbounded. \n');
-                        fprintf('Unbounded variables: ');
+                    case 'nolimitado'
+                        fprintf('El problema no esta limitado. \n');
+                        fprintf('Variables no limitadas: ');
                         
-                        for i = 1:length(p.unbounded_vars)
-                            fprintf('%2s ',p.vars_list{p.unbounded_vars(i)});
+                        for i = 1:length(p.nolimitado_vars)
+                            fprintf('%2s ',p.vars_list{p.nolimitado_vars(i)});
                         end
                         fprintf('\n');
                         
-                    case 'infeasible'
-                        fprintf('This problem is infeasible.\n');
+                    case 'infactible'
+                        fprintf('El problema es infactible.\n');
                     case 'maxiter'
-                        fprintf('Maximum number of iterations reached.\n');
+                        fprintf('Alcanzo el maximo numero de iteraciones posibles.\n');
                 end
                 
             end
