@@ -1,0 +1,81 @@
+[System]
+Name='AQFIS'
+Type='mamdani'
+Version=2.0
+NumInputs=5
+NumOutputs=1
+NumRules=6
+AndMethod='min'
+OrMethod='max'
+ImpMethod='min'
+AggMethod='max'
+DefuzzMethod='centroid'
+
+[Input1]
+Name='PM2.5'
+Range=[0 500]
+NumMFs=6
+MF1='muyBajo':'trapmf',[-16.08 0 9.921 12]
+MF2='bajo':'trapmf',[9.8 12.1 32.4 35.4]
+MF3='medio':'trapmf',[30.6527513227513 36.8227513227513 50.8327513227513 56.7227513227513]
+MF4='alto':'trapmf',[53.4 55.5 146.164021164021 150]
+MF5='muyAlto':'trapmf',[144 151 241.402116402116 250]
+MF6='masAlto':'trapmf',[243 251 500 500]
+
+[Input2]
+Name='CO'
+Range=[0 55]
+NumMFs=6
+MF1='muyBajo':'gbellmf',[10.698835978836 39.6 -5.97]
+MF2='bajo':'gbellmf',[2.40089947089947 6.94 5.82]
+MF3='medio':'gbellmf',[2.87 16.5 9.1994708994709]
+MF4='alto':'gbellmf',[3.23306878306878 12.3 13.2]
+MF5='muyAlto':'gbellmf',[7.97 12 22.7]
+MF6='masAlto':'gbellmf',[9.7 10.6 37.8534391534392]
+
+[Input3]
+Name='Temp'
+Range=[0 100]
+NumMFs=5
+MF1='frio':'trapmf',[1.04 2.78 20.5 24.2063492063492]
+MF2='tibio':'trapmf',[22.3 22.9 25.8 27.3809523809524]
+MF3='caliente':'trapmf',[25.9 27.4 30.6 31.8783068783069]
+MF4='muyCaliente':'trapmf',[30.1 32.9 37.5 39]
+MF5='masCaliente':'trapmf',[36.5 39 98 100]
+
+[Input4]
+Name='RH'
+Range=[0 100]
+NumMFs=4
+MF1='bajo':'trapmf',[0 17 39.5 41]
+MF2='medio':'trapmf',[39.5 41 59 62]
+MF3='alto':'trapmf',[59 62 80 82]
+MF4='muyAlto':'trapmf',[80 82 98 100]
+
+[Input5]
+Name='PesionAire'
+Range=[0 1100]
+NumMFs=4
+MF1='muyBajo':'trapmf',[0 70 150 300]
+MF2='bajo':'trapmf',[200 300 420 500]
+MF3='medio':'trapmf',[400 500 610 700]
+MF4='alto':'trapmf',[600 800 900 1100]
+
+[Output1]
+Name='Human_Happiness_Level'
+Range=[0 500]
+NumMFs=6
+MF1='feliz':'trapmf',[0 5 45 50]
+MF2='agusto':'trapmf',[50 55 95 100]
+MF3='infeliz':'trapmf',[100 105 145 150]
+MF4='depresivo':'trapmf',[150 155 195 200]
+MF5='triste':'trapmf',[200 205 295 300]
+MF6='enfermo':'trapmf',[300 305 495 500]
+
+[Rules]
+6 6 5 0 0, 6 (1) : 2
+0 0 4 4 0, 6 (1) : 1
+5 5 0 0 0, 5 (1) : 2
+0 0 4 3 0, 5 (1) : 1
+4 4 0 0 0, 4 (1) : 2
+0 0 4 0 0, 4 (1) : 1
